@@ -1,0 +1,184 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/targetkiller/gulp-imageisux"
+
+    >gulp-imageisux (v1.0.5)</a>
+</h1>
+<h4>智图gulp插件</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-imageisux">module gulp-imageisux</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-imageisux.gulp-imageisux">
+            function <span class="apidocSignatureSpan"></span>gulp-imageisux
+            <span class="apidocSignatureSpan">(abspath, enableWebp)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-imageisux" id="apidoc.module.gulp-imageisux">module gulp-imageisux</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-imageisux.gulp-imageisux" id="apidoc.element.gulp-imageisux.gulp-imageisux">
+        function <span class="apidocSignatureSpan"></span>gulp-imageisux
+        <span class="apidocSignatureSpan">(abspath, enableWebp)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function imageisux(abspath, enableWebp) {
+    var stream = through.obj(function(file,encoding,callback){
+        _abspath = abspath || &#x22;&#x22;;
+        enableWebp = enableWebp || false;
+        var _that = this;
+        if (file.isNull()) {
+            this.push(file);
+            return callback();
+        }
+
+        if (file.isStream()) {
+            throw PluginError(PLUGIN_NAME, &#x22;Stream is not supported&#x22;);
+            return callback();
+        }
+
+        if (file.isBuffer()) {
+            var file_path = file.path;
+            file_dirname = path.dirname(file.path);
+            var file_name = path.basename(file.path);
+            var file_type = path.extname(file.path);
+            file_type = file_type.slice(1,file_type.length);
+
+            // surport jpg,png,gif
+            if(file_type==&#x27;png&#x27;||file_type==&#x27;jpg&#x27;||file_type==&#x27;jpeg&#x27;||file_type==&#x27;gif&#x27;){
+                var data = {
+                    fileSelect: {file: file_path, content_type: &#x27;image/&#x27;+file_type },
+                    webp:enableWebp
+                };
+
+                needle.post(&#x27;http://zhitu.isux.us/index.php/preview/upload_file&#x27;, data, {multipart:true}, function(err, resp ,body
+) {
+                    if(err){
+                        gutil.log(&#x27;[error]&#x27;, file_name+&#x27; cannot post to the server.&#x27;);
+                        write_originfile(file_name);
+                    }
+                    else{
+                        // server will return a json
+                        if(body.indexOf(&#x27;{&#x27;)&#x3e;-1){
+                            try{
+                                // format the json
+                                var str = &#x27;({&#x27;+body.split(&#x27;{&#x27;)[1]+&#x27;)&#x27;;
+                                var json_str = eval(str);
+
+<span class="apidocCodeCommentSpan">                                /*
+                                * output: origin type of compressed images
+                                * output_webp: webp type of compressed images
+                                * output_code: the status code
+                                * size: images size
+                                */
+</span>                                var output = json_str.output;
+                                var output_webp = json_str.output_webp;
+                                var output_code = json_str.code;
+                                var size = json_str.size;
+
+                                /*
+                                * all the images return
+                                * type=1：origin
+                                * type=2：webp
+                                */
+                                var output_ary = new Array();
+                                // abspath is exist and need not use webp
+                                if(_abspath!==&#x22;&#x22; &#x26;&#x26; enableWebp===false){
+                                    if(output!==undefined){
+                                        output_ary.push({&#x27;type&#x27;:1,&#x27;url&#x27;:output});
+                                    }
+                                    else{
+                                        gutil.log(&#x27;[error]&#x27;,&#x27;The return image &#x27;+file_name+&#x27; does not exist!&#x27;);
+                                    }
+                                }
+
+                                // abspath is not exist, so init /dest/ and /webp/ and give the origin and webp-types.
+                                // if abspath is exist, so output the images to /abspath/ and give the webp-types to /webp/.
+                                else{
+                                    if(output!==undefined){
+                                        output_ary.push({&#x27;type&#x27;:1,&#x27;url&#x27;:output});
+                                    }
+                                    else{
+                                        gutil.log(&#x27;[error]&#x27;,file_name+&#x27; cannot turn to origin-type!&#x27;);
+                                    }
+
+                                    if(output_webp!==undefined){
+                                        output_ary.push({&#x27;type&#x27;:2,&#x27;url&#x27;:output_webp});
+                                    }
+                                    else{
+                                        gutil.log(&#x27;[error]&#x27;,file_name+&#x27; cannot t ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
